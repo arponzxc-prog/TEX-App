@@ -70,27 +70,16 @@ img.prev{max-width:100%;max-height:200px;border-radius:12px;margin-top:8px}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getAuth,signInWithCustomToken}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import{getFirestore,doc,getDoc,getDocs,collection,query,where,orderBy,limit,startAfter,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getAuth,signInAnonymously}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,getDoc,getDocs,collection,query,where,orderBy,limit,startAfter,onSnapshot,setDoc,updateDoc,runTransaction,writeBatch,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ================= CONFIGURATION — EDIT ONLY THIS BLOCK ================= */
 const APP_CONFIG={
   APP_NAME:"Tele Earn X",APP_SHORT_NAME:"TEX",TOKEN_NAME:"TEX",CURRENCY_NAME:"BDT",
-  TELEGRAM_BOT_USERNAME:"TeleEarnx_bot",          // <-- REPLACE (BotFather, without @)
-  TELEGRAM_MINI_APP_NAME:"Open",        // <-- REPLACE (BotFather > /newapp short name)
-  FIREBASE_CONFIG:{                                   // <-- REPLACE (Firebase Console > Project settings > Your apps > Web app)
-    apiKey: "AIzaSyCO1aEFjycvMhy2HdP5Do3issh1FvzXujA",
-
-  authDomain: "tex-user-app.firebaseapp.com",
-
-  projectId: "tex-user-app",
-
-  storageBucket: "tex-user-app.firebasestorage.app",
-
-  messagingSenderId: "995188245823",
-
-  appId: "1:995188245823:web:02511d3d78d829856e7f8a",          // <-- REPLACE: trusted Cloud Function URL (see guide)
-  IMGBB_API_KEY:"dae153cddd03aaa2e48a038813f304eb",                 // <-- REPLACE (api.imgbb.com). WARNING: visible to anyone who opens this page
+  TELEGRAM_BOT_USERNAME:"TeleEarnx_bot",
+  TELEGRAM_MINI_APP_NAME:"Open",
+  FIREBASE_CONFIG:{apiKey:"AIzaSyCO1aEFjycvMhy2HdP5Do3issh1FvzXujA",authDomain:"tex-user-app.firebaseapp.com",projectId:"tex-user-app",storageBucket:"tex-user-app.firebasestorage.app",messagingSenderId:"995188245823",appId:"1:995188245823:web:02511d3d78d829856e7f8a"},
+  IMGBB_API_KEY:"dae153cddd03aaa2e48a038813f304eb",
   UPLOAD_PROXY_URL:"",                                // optional: backend upload proxy; if set, imgbb key is not used
   UI_SETTINGS:{defaultTheme:"dark",showAnimations:true}
 };
@@ -123,16 +112,43 @@ function guard(needElig=true){if(S.set.maintenanceMode){toast("Maintenance in pr
  if(S.user?.accountStatus&&S.user.accountStatus!=="active"){toast("Your account is restricted. Contact support.","er");return false}
  if(needElig&&!eligible()){toast("Complete account verification first.","er");return false}return true}
 
-/* ---------- Trusted backend interface (all money/identity operations) ---------- */
-async function api(action,payload={},key){
-  if(!tg?.initData)throw new Error("Open this app from Telegram.");
-  if(APP_CONFIG.BACKEND_URL.includes("YOUR_"))throw new Error("Backend is not configured yet.");
-  const lock=key||action;if(S.busy.has(lock))throw new Error("Request already in progress.");S.busy.add(lock);
-  try{const r=await fetch(APP_CONFIG.BACKEND_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action,initData:tg.initData,payload,requestId:crypto.randomUUID()})});
-    const j=await r.json().catch(()=>null);if(!r.ok||!j?.ok)throw new Error(j?.message||"Request failed ("+r.status+")");return j.data}
-  catch(e){if(e instanceof TypeError)throw new Error("Network error. Check your connection.");throw e}
-  finally{S.busy.delete(lock)}}
+/* ---------- No-backend (free) engine: Firestore rules are the only protection ---------- */
+const dnum=()=>{const d=new Date();return d.getUTCFullYear()*1e4+(d.getUTCMonth()+1)*100+d.getUTCDate()};
+const prevDay=n=>{const d=new Date(Date.UTC(Math.floor(n/1e4),Math.floor(n/100)%100-1,n%100)-864e5);return d.getUTCFullYear()*1e4+(d.getUTCMonth()+1)*100+d.getUTCDate()};
+const r4=n=>Math.round(n*1e4)/1e4,r2=n=>Math.floor(n*100+1e-6)/100,W=()=>doc(fb.db,"wallets",S.uid),NT=()=>doc(collection(fb.db,"transactions"));
+const LOCAL={
+ async claimDaily(){const rw=Number(S.set.dailyCheckinRewardTex||0);if(S.set.dailyCheckinEnabled===false||!(rw>0))throw new Error("Daily check-in is not available.");const dc=doc(fb.db,"dailyClaims",S.uid);
+  await runTransaction(fb.db,async t=>{const[d,w]=await Promise.all([t.get(dc),t.get(W())]),dd=d.data()||{},n=dnum(),w0=w.data();if((dd.lastClaimDay||0)>=n)throw new Error("Already claimed today.");
+   t.set(dc,{lastClaimDay:n,lastClaimAt:serverTimestamp(),streak:dd.lastClaimDay===prevDay(n)?(dd.streak||0)+1:1});
+   t.update(W(),{texBalance:r4(w0.texBalance+rw),availableTex:r4(w0.availableTex+rw),updatedAt:serverTimestamp()});
+   t.set(NT(),{userId:S.uid,type:"daily_checkin",currency:"TEX",amount:rw,status:"completed",referenceId:String(n),createdAt:serverTimestamp()})})},
+ async convert({texAmount:x}){const rate=Number(S.set.texToBdtRate),fee=Number(S.set.conversionFeePercent||0),mn=Number(S.set.minimumConversionTex||0);
+  if(S.set.conversionEnabled===false||!(rate>0))throw new Error("Conversion is unavailable.");if(!(x>0)||x<mn)throw new Error("Minimum conversion is "+mn+" TEX.");
+  await runTransaction(fb.db,async t=>{const w=(await t.get(W())).data();if(x>w.availableTex)throw new Error("Insufficient TEX.");const out=r2(x*rate*(100-fee)/100);
+   t.update(W(),{texBalance:r4(w.texBalance-x),availableTex:r4(w.availableTex-x),bdtBalance:r2(w.bdtBalance+out),updatedAt:serverTimestamp()});
+   t.set(NT(),{userId:S.uid,type:"conversion",currency:"BDT",amount:out,status:"completed",metadata:{texAmount:x,rate,feePercent:fee},createdAt:serverTimestamp()})})},
+ async withdraw({paymentMethodId:pm,amountBdt:a,accountNumber:n}){const m=(await getDoc(doc(fb.db,"paymentMethods",pm))).data();if(!m||m.active===false||S.set.withdrawalEnabled===false)throw new Error("This method is unavailable.");
+  const mn=m.minimumWithdrawal??S.set.minimumWithdrawal??0,mx=m.maximumWithdrawal??S.set.maximumWithdrawal??1e12;if(a<mn||a>mx)throw new Error("Amount is outside the allowed limits.");
+  const fee=r2(m.feeType==="percent"?a*(m.feeValue||0)/100:Number(m.feeValue||0));
+  await runTransaction(fb.db,async t=>{const w=(await t.get(W())).data();if(a>w.bdtBalance)throw new Error("Insufficient BDT.");
+   t.update(W(),{bdtBalance:r2(w.bdtBalance-a),reservedBdt:r2((w.reservedBdt||0)+a),updatedAt:serverTimestamp()});
+   const wr=doc(collection(fb.db,"withdrawals"));t.set(wr,{userId:S.uid,paymentMethodId:pm,paymentMethodName:m.name,amountBdt:a,feeBdt:fee,payoutBdt:r2(a-fee),paymentDetails:{accountNumber:n},status:"pending",createdAt:serverTimestamp()});
+   t.set(NT(),{userId:S.uid,type:"withdrawal",currency:"BDT",amount:a,status:"pending",referenceId:wr.id,createdAt:serverTimestamp()})})},
+ async _sub(c,{id,proofType,proofText,proofImageUrl}){const ref=doc(fb.db,c,S.uid+"_"+id),o=await getDoc(ref),d={userId:S.uid,taskId:id,proofType,proofText,proofImageUrl,status:"pending",submittedAt:serverTimestamp()};
+  if(o.exists()){if(o.data().status!=="rejected")throw new Error("Already submitted.");await updateDoc(ref,d)}else await setDoc(ref,d)},
+ submitTask(p){return LOCAL._sub("taskSubmissions",p)},submitVerification(p){return LOCAL._sub("verificationSubmissions",p)},
+ async claimAd(){throw new Error("Ads are temporarily unavailable.")},
+ async markNotificationRead({id}){await updateDoc(doc(fb.db,"notifications",id),{read:true})}};
+async function api(action,payload={},key){const lock=key||action;if(S.busy.has(lock))throw new Error("Request already in progress.");S.busy.add(lock);
+  try{if(!LOCAL[action])throw new Error("Not available.");return await LOCAL[action](payload)}
+  catch(e){throw new Error(e.code==="permission-denied"?"Blocked by database rules.":e.message)}finally{S.busy.delete(lock)}}
+async function ensureUser(tu,sp){const db=fb.db,ur=doc(db,"users",S.uid),o=await getDoc(ur),au=fb.auth.currentUser.uid,
+  pf={username:tu.username||"",firstName:tu.first_name||"",lastName:tu.last_name||"",photoUrl:tu.photo_url||""};
+  if(o.exists()){if(o.data().authUid!==au)throw new Error("This Telegram account is linked to another session. Contact support.");await updateDoc(ur,{...pf,lastSeenAt:serverTimestamp()});return}
+  const ok=/^\d{3,15}$/.test(sp)&&sp!==S.uid,b=writeBatch(db);
+  b.set(ur,{telegramUserId:S.uid,...pf,referralCode:S.uid,referredBy:ok?sp:"",verificationStatus:"unverified",accountStatus:"active",authUid:au,stats:{},createdAt:serverTimestamp(),lastSeenAt:serverTimestamp()});
+  b.set(doc(db,"wallets",S.uid),{texBalance:0,availableTex:0,pendingTex:0,bdtBalance:0,reservedBdt:0,updatedAt:serverTimestamp()});await b.commit();
+  if(ok)try{await setDoc(doc(db,"referrals",S.uid),{referrerUserId:sp,referredUserId:S.uid,referredName:pf.username||pf.firstName||"User",referredPhotoUrl:pf.photoUrl,status:"pending",createdAt:serverTimestamp()})}catch{}}
 async function act(btn,fn,okMsg){if(btn)btn.disabled=true;try{const r=await fn();if(okMsg)toast(okMsg,"ok");return r}catch(e){toast(e.message,"er")}finally{if(btn)btn.disabled=false}}
 
 /* ---------- Image upload (isolated; swap to proxy via UPLOAD_PROXY_URL) ---------- */
@@ -308,12 +324,12 @@ async function refresh(){const[u,w]=await Promise.all([getDoc(doc(fb.db,"users",
 async function boot(){$("#sr").hidden=true;$("#se").textContent="";prog(5,"Loading configuration");
   const C=APP_CONFIG,miss=["apiKey","projectId","appId"].filter(k=>!C.FIREBASE_CONFIG[k]||String(C.FIREBASE_CONFIG[k]).includes("YOUR_"));
   if(miss.length)return fail("Configuration missing: Firebase "+miss.join(", ")+". Edit APP_CONFIG in index.html.");
-  if(C.BACKEND_URL.includes("YOUR_"))return fail("Configuration missing: BACKEND_URL (trusted backend endpoint).");
+  
   prog(15,"Starting Telegram");if(!tg||!tg.initData)return fail("Telegram is required. Open Tele Earn X from the Telegram bot; the preview mode cannot earn rewards.");
   tg.ready();tg.expand();tg.setHeaderColor?.("#0B1120");tg.setBackgroundColor?.("#0B1120");tg.BackButton.onClick(closeView);
   try{prog(30,"Starting Firebase");if(!fb.app){fb.app=initializeApp(C.FIREBASE_CONFIG);fb.auth=getAuth(fb.app);fb.db=getFirestore(fb.app)}
-    prog(45,"Verifying Telegram identity");const a=await api("authTelegram",{startParam:tg.initDataUnsafe?.start_param||""});
-    await signInWithCustomToken(fb.auth,a.customToken);S.uid=String(a.uid);
+    prog(45,"Signing in");const tu=tg.initDataUnsafe?.user;if(!tu?.id)throw new Error("Telegram user not found.");await signInAnonymously(fb.auth);S.uid=String(tu.id);
+    S.set=(await getDoc(doc(fb.db,"appSettings","general"))).data()||{};await ensureUser(tu,tg.initDataUnsafe.start_param||"");
     prog(65,"Loading profile and wallet");await new Promise((res,rej)=>{let n=0;const ok=()=>++n===2&&res();S.unsubs.forEach(f=>f());
       S.unsubs=[onSnapshot(doc(fb.db,"users",S.uid),s=>{S.user=s.data();ok();S.page&&!$("#app").hidden&&go(S.page)},rej),onSnapshot(doc(fb.db,"wallets",S.uid),s=>{S.wallet=s.data()||{};ok();if(!$("#app").hidden&&S.page==="home")rHome()},rej)]});
     prog(85,"Loading settings");const g=await getDoc(doc(fb.db,"appSettings","general"));S.set=g.data()||{};
