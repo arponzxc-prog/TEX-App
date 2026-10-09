@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tele Earn X</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0B1120;--card:#111C30;--sf:#17243A;--blue:#287BFF;--green:#21D69B;--tx:#F5F7FF;--mu:#91A0B8;--warn:#F5B942;--err:#FF5B6E;--r:16px}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:84px}
+button,input,select,textarea{font:inherit;color:inherit}
+small,.sm{color:var(--mu);font-size:12.5px}
+.i{width:22px;height:22px}
+#splash{position:fixed;inset:0;background:var(--bg);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;transition:opacity .4s}
+#splash.out{opacity:0;pointer-events:none}
+.logo{width:84px;height:84px;border-radius:26px;background:linear-gradient(135deg,var(--blue),var(--green));display:grid;place-items:center;font-weight:800;font-size:28px;letter-spacing:1px;animation:pop 1.2s ease-out}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.bar{width:220px;height:6px;background:var(--sf);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .3s}
+.page{display:none;padding:16px;max-width:560px;margin:0 auto}.page.on{display:block}
+.row{display:flex;align-items:center;gap:10px}.grow{flex:1;min-width:0}.sp{justify-content:space-between}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-top:12px}
+.hd{display:flex;align-items:center;gap:10px}
+.av{width:44px;height:44px;border-radius:50%;background:var(--sf);object-fit:cover;display:grid;place-items:center;font-weight:700;flex:none}
+.ib{background:var(--card);border:0;border-radius:12px;width:42px;height:42px;display:grid;place-items:center;position:relative}
+.ib i{position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:var(--err)}
+.wallet{margin-top:14px;border-radius:22px;padding:18px;background:linear-gradient(135deg,#1c58d6,var(--blue) 55%,#1fa6c9);box-shadow:0 10px 30px #287bff44}
+.wallet h1{font-size:34px;margin:2px 0 10px}.wallet .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wallet .g div{background:#0b112033;border-radius:12px;padding:8px 10px}.wallet small{color:#dbe8ff}
+.btns{display:flex;gap:8px;margin-top:14px}
+.btn{flex:1;border:0;border-radius:12px;padding:11px 12px;font-weight:600;background:linear-gradient(135deg,var(--blue),#4b95ff);cursor:pointer}
+.btn.w{background:#fff;color:#0B1120}.btn.g{background:var(--sf)}.btn.gr{background:linear-gradient(135deg,var(--green),#17b585);color:#06231a}.btn.s{padding:7px 12px;flex:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.grid .card{margin:0}.grid b{font-size:20px;display:block}
+h3{font-size:16px;margin:20px 0 4px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0;scrollbar-width:none}
+.chip{border:0;background:var(--card);border-radius:20px;padding:8px 14px;white-space:nowrap;color:var(--mu)}.chip.on{background:var(--blue);color:#fff}
+.tag{font-size:11.5px;padding:2px 8px;border-radius:9px;background:var(--sf);color:var(--mu)}
+.t-pending,.t-processing,.t-inprogress,.t-pendingreview{color:var(--warn)}.t-approved,.t-paid,.t-completed,.t-verified,.t-rewarded,.t-qualified,.t-available{color:var(--green)}.t-rejected,.t-failed,.t-ineligible{color:var(--err)}
+input,select,textarea{width:100%;background:var(--sf);border:1px solid #243452;border-radius:12px;padding:11px;margin-top:6px;outline:0}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--blue)}
+label{display:block;margin-top:12px;font-size:13px;color:var(--mu)}
+.empty{text-align:center;padding:26px 10px;color:var(--mu)}
+.sk{height:64px;border-radius:var(--r);margin-top:12px;background:linear-gradient(90deg,var(--card) 25%,var(--sf) 50%,var(--card) 75%);background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0e1829ee;backdrop-filter:blur(12px);padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:20}
+nav button{flex:1;background:0;border:0;color:var(--mu);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;padding:6px 0;border-radius:12px}
+nav button.on{color:var(--green)}
+#view{position:fixed;inset:0;background:var(--bg);z-index:30;overflow:auto;padding:16px 16px 40px}
+#view>div{max-width:560px;margin:0 auto}
+#ov{position:fixed;inset:0;background:#000a;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+#ov>div{background:var(--card);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px;max-height:88vh;overflow:auto;animation:up .25s}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+#toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px)}
+.ts{background:var(--sf);border-left:4px solid var(--blue);border-radius:12px;padding:11px 14px;box-shadow:0 6px 20px #0008}.ts.ok{border-color:var(--green)}.ts.er{border-color:var(--err)}
+.pg{height:6px;background:var(--sf);border-radius:9px;margin-top:8px;overflow:hidden}.pg i{display:block;height:100%;width:0;background:var(--green)}
+.menu{display:flex;justify-content:space-between;width:100%;background:var(--card);border:0;border-radius:14px;padding:15px;margin-top:8px;text-align:left}
+.top1{color:#FFD35A}.top2{color:#C9D3E3}.top3{color:#E0955A}
+.rk{width:30px;font-weight:800;text-align:center}
+.warnb{background:#f5b94222;border:1px solid var(--warn);border-radius:12px;padding:10px;margin-top:12px;color:var(--warn)}
+img.prev{max-width:100%;max-height:200px;border-radius:12px;margin-top:8px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+
+<div id="splash"><div class="logo">TEX</div><h2>Tele Earn X</h2><small>Complete Tasks. Earn Rewards.</small>
+<div class="bar"><i id="sb"></i></div><small id="sp">0%</small><div id="se" class="sm" style="max-width:320px;color:var(--err)"></div><button class="btn" id="sr" hidden style="flex:none">Retry</button></div>
+<main id="app" hidden>
+<section class="page" id="p-home"></section><section class="page" id="p-earn"></section><section class="page" id="p-refer"></section><section class="page" id="p-board"></section><section class="page" id="p-set"></section></main>
+<nav id="nav" hidden></nav>
+<div id="view" hidden><div><div class="row" style="margin-bottom:8px"><button class="ib" data-a="back" aria-label="Back">‹</button><h2 id="vt"></h2></div><div id="vb"></div></div></div>
+<div id="ov" hidden></div><div id="toast" aria-live="polite"></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,signInWithCustomToken}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,getDoc,getDocs,collection,query,where,orderBy,limit,startAfter,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= CONFIGURATION — EDIT ONLY THIS BLOCK ================= */
+const APP_CONFIG={
+  APP_NAME:"Tele Earn X",APP_SHORT_NAME:"TEX",TOKEN_NAME:"TEX",CURRENCY_NAME:"BDT",
+  TELEGRAM_BOT_USERNAME:"TeleEarnx_bot",          // <-- REPLACE (BotFather, without @)
+  TELEGRAM_MINI_APP_NAME:"YOUR_MINI_APP_NAME",        // <-- REPLACE (BotFather > /newapp short name)
+  FIREBASE_CONFIG:{                                   // <-- REPLACE (Firebase Console > Project settings > Your apps > Web app)
+    apiKey: "AIzaSyCO1aEFjycvMhy2HdP5Do3issh1FvzXujA",
+
+  authDomain: "tex-user-app.firebaseapp.com",
+
+  projectId: "tex-user-app",
+
+  storageBucket: "tex-user-app.firebasestorage.app",
+
+  messagingSenderId: "995188245823",
+
+  appId: "1:995188245823:web:02511d3d78d829856e7f8a",          // <-- REPLACE: trusted Cloud Function URL (see guide)
+  IMGBB_API_KEY:"dae153cddd03aaa2e48a038813f304eb",                 // <-- REPLACE (api.imgbb.com). WARNING: visible to anyone who opens this page
+  UPLOAD_PROXY_URL:"",                                // optional: backend upload proxy; if set, imgbb key is not used
+  UI_SETTINGS:{defaultTheme:"dark",showAnimations:true}
+};
+/* ======================================================================== */
+
+const tg=window.Telegram?.WebApp,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=(n,d=4)=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:d});
+const bdt=n=>"৳"+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const when=t=>t?.toDate?t.toDate().toLocaleString():(t?new Date(t).toLocaleString():"—");
+const cls=s=>"t-"+String(s||"").toLowerCase().replace(/[^a-z]/g,"");
+const lab=s=>String(s||"").replace(/_/g," ").replace(/^./,c=>c.toUpperCase());
+const ic={home:'<path d="M3 11l9-8 9 8v10H3z"/>',earn:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',refer:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M19 8v6M16 11h6"/>',board:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0zM17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3"/>',set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',bell:'<path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"/>'};
+const I=n=>`<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic[n]||""}</svg>`;
+const S={uid:null,user:null,wallet:null,set:{},cats:[],cat:null,unsubs:[],busy:new Set(),page:"home",lb:{kind:"earn",per:"all"}};
+let fb={};
+
+/* ---------- UI helpers ---------- */
+function toast(m,t=""){const e=document.createElement("div");e.className="ts "+t;e.textContent=m;$("#toast").append(e);setTimeout(()=>e.remove(),3800)}
+function modal(html){const o=$("#ov");o.innerHTML=`<div role="dialog">${html}</div>`;o.hidden=false}
+function closeModal(){$("#ov").hidden=true;$("#ov").innerHTML=""}
+function confirmBox(title,body,ok="Confirm"){return new Promise(r=>{modal(`<h3 style="margin-top:0">${esc(title)}</h3><div style="margin:8px 0 16px">${body}</div><div class="btns"><button class="btn g" id="cn">Cancel</button><button class="btn" id="cy">${esc(ok)}</button></div>`);$("#cn").onclick=()=>{closeModal();r(false)};$("#cy").onclick=()=>{closeModal();r(true)}})}
+const skel=n=>Array(n).fill('<div class="sk"></div>').join("");
+const empty=(t,s="")=>`<div class="empty"><b>${esc(t)}</b><br><small>${esc(s)}</small></div>`;
+const avatar=u=>u?.photoUrl?`<img class="av" src="${esc(u.photoUrl)}" alt="" referrerpolicy="no-referrer">`:`<div class="av">${esc((u?.username||u?.firstName||"?")[0]||"?").toUpperCase()}</div>`;
+const dname=u=>u?.username?"@"+u.username:[u?.firstName,u?.lastName].filter(Boolean).join(" ")||"User";
+const verified=()=>S.user?.verificationStatus==="verified";
+const eligible=()=>verified()||S.set.verificationRequired===false;
+function guard(needElig=true){if(S.set.maintenanceMode){toast("Maintenance in progress. Try again later.","er");return false}
+ if(S.user?.accountStatus&&S.user.accountStatus!=="active"){toast("Your account is restricted. Contact support.","er");return false}
+ if(needElig&&!eligible()){toast("Complete account verification first.","er");return false}return true}
+
+/* ---------- Trusted backend interface (all money/identity operations) ---------- */
+async function api(action,payload={},key){
+  if(!tg?.initData)throw new Error("Open this app from Telegram.");
+  if(APP_CONFIG.BACKEND_URL.includes("YOUR_"))throw new Error("Backend is not configured yet.");
+  const lock=key||action;if(S.busy.has(lock))throw new Error("Request already in progress.");S.busy.add(lock);
+  try{const r=await fetch(APP_CONFIG.BACKEND_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action,initData:tg.initData,payload,requestId:crypto.randomUUID()})});
+    const j=await r.json().catch(()=>null);if(!r.ok||!j?.ok)throw new Error(j?.message||"Request failed ("+r.status+")");return j.data}
+  catch(e){if(e instanceof TypeError)throw new Error("Network error. Check your connection.");throw e}
+  finally{S.busy.delete(lock)}}
+async function act(btn,fn,okMsg){if(btn)btn.disabled=true;try{const r=await fn();if(okMsg)toast(okMsg,"ok");return r}catch(e){toast(e.message,"er")}finally{if(btn)btn.disabled=false}}
+
+/* ---------- Image upload (isolated; swap to proxy via UPLOAD_PROXY_URL) ---------- */
+function uploadImage(file,onp){return new Promise((res,rej)=>{
+  const px=APP_CONFIG.UPLOAD_PROXY_URL;if(!px&&APP_CONFIG.IMGBB_API_KEY.includes("YOUR_"))return rej(new Error("Image upload is not configured."));
+  const x=new XMLHttpRequest(),f=new FormData();f.append("image",file);
+  x.open("POST",px||"https://api.imgbb.com/1/upload?key="+encodeURIComponent(APP_CONFIG.IMGBB_API_KEY));
+  if(px)x.setRequestHeader("X-Telegram-Init-Data",tg.initData);
+  x.upload.onprogress=e=>e.lengthComputable&&onp(e.loaded/e.total*100);
+  x.onload=()=>{try{const j=JSON.parse(x.responseText);const u=j.data?.url||j.url;u?res(u):rej(new Error("Upload failed."))}catch{rej(new Error("Upload failed."))}};
+  x.onerror=()=>rej(new Error("Network error during upload."));x.send(f)})}
+function mountUploader(box){let url="",file=null;
+  box.innerHTML=`<input type="file" accept="image/png,image/jpeg,image/webp" id="uf"><img class="prev" id="upv" hidden alt="Preview"><div class="pg" id="upg" hidden><i></i></div><div class="sm" id="ust"></div><div class="btns"><button type="button" class="btn s" id="ub" hidden>Upload image</button><button type="button" class="btn g s" id="ur" hidden>Remove</button></div>`;
+  const st=m=>$("#ust").textContent=m;
+  $("#uf").onchange=e=>{const f=e.target.files[0];if(!f)return;
+    if(!/^image\/(png|jpeg|webp)$/.test(f.type)){st("Use a PNG, JPG or WebP image.");return}
+    if(f.size>5*1048576){st("Image must be under 5 MB.");return}
+    file=f;url="";$("#upv").src=URL.createObjectURL(f);$("#upv").hidden=false;$("#ub").hidden=false;$("#ur").hidden=false;st("Ready to upload.")};
+  $("#ub").onclick=async()=>{if(!file)return;$("#ub").disabled=true;$("#upg").hidden=false;
+    try{url=await uploadImage(file,p=>$("#upg i").style.width=p+"%");st("Uploaded ✓");$("#ub").hidden=true}catch(e){st(e.message)}finally{$("#ub").disabled=false}};
+  $("#ur").onclick=()=>{file=null;url="";$("#uf").value="";$("#upv").hidden=$("#ub").hidden=$("#ur").hidden=$("#upg").hidden=true;st("")};
+  return{url:()=>url,pending:()=>!!file&&!url}}
+
+/* ---------- Navigation ---------- */
+const PAGES=[["home","Home"],["earn","Earn"],["refer","Refer"],["board","Ranks"],["set","Settings"]];
+$("#nav").innerHTML=PAGES.map(([k,l])=>`<button data-a="go" data-p="${k}" aria-label="${l}">${I(k)}<span>${l}</span></button>`).join("");
+function go(p){S.page=p;$$(".page").forEach(e=>e.classList.toggle("on",e.id==="p-"+p));$$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  ({home:rHome,earn:rEarn,refer:rRefer,board:rBoard,set:rSet})[p]();window.scrollTo(0,0)}
+function openView(title,fn){$("#vt").textContent=title;$("#view").hidden=false;$("#vb").innerHTML=skel(3);tg?.BackButton?.show();fn($("#vb"))}
+function closeView(){$("#view").hidden=true;tg?.BackButton?.hide();closeModal()}
+
+/* ---------- Data helpers ---------- */
+const docs=async q=>(await getDocs(q)).docs.map(d=>({id:d.id,...d.data()}));
+const maintCard=()=>S.set.maintenanceMode?`<div class="warnb"><b>Under maintenance</b><br>Earning, conversion and withdrawals are paused. Your data and balances are safe.</div>`:"";
+
+/* ---------- HOME ---------- */
+async function rHome(){const u=S.user,w=S.wallet||{},st=u.stats||{},el=$("#p-home");
+  el.innerHTML=`<div class="hd">${avatar(u)}<div class="grow"><b>Welcome back, ${esc(dname(u))}!</b><br><small class="${cls(u.verificationStatus)}">${verified()?"✔ Verified":"Not verified"}</small></div><button class="ib" data-a="notifs" aria-label="Notifications">${I("bell")}<i id="nd" hidden></i></button></div>${maintCard()}
+  <div class="wallet"><small>Total ${APP_CONFIG.TOKEN_NAME} balance</small><h1>${num(w.texBalance)} TEX</h1>
+  <div class="g"><div><small>Available</small><br><b>${num(w.availableTex)} TEX</b></div><div><small>Pending rewards</small><br><b>${num(w.pendingTex)} TEX</b></div><div style="grid-column:1/3"><small>BDT balance${w.reservedBdt?` (reserved ${bdt(w.reservedBdt)})`:""}</small><br><b>${bdt(w.bdtBalance)}</b></div></div>
+  <div class="btns"><button class="btn w" data-a="go" data-p="earn">Earn TEX</button><button class="btn w" data-a="conv">Convert TEX</button><button class="btn w" data-a="wd">Withdraw BDT</button></div></div>
+  <div class="grid"><div class="card"><small>Completed tasks</small><b>${num(st.completedTasks,0)}</b></div><div class="card"><small>Qualified referrals</small><b>${num(st.qualifiedReferrals,0)}</b></div><div class="card"><small>Ads watched</small><b>${num(st.adsWatched,0)}</b></div><div class="card"><small>Bonus earned</small><b>${num(st.bonusEarned)} TEX</b></div></div>
+  ${verified()?"":`<div class="warnb">Account verification is ${esc(lab(u.verificationStatus||"required"))}. <a href="#" data-a="verif" style="color:inherit"><b>Open verification</b></a></div>`}
+  <h3>Announcements</h3><div id="hAn">${skel(1)}</div><h3>Recent transactions</h3><div id="hTx">${skel(2)}</div><h3>Recommended tasks</h3><div id="hTk">${skel(2)}</div>
+  <button class="menu" data-a="help"><span>Need help? Contact support</span><span>›</span></button>`;
+  try{const an=(await docs(query(collection(fb.db,"announcements"),orderBy("createdAt","desc"),limit(8)))).filter(a=>a.active!==false).slice(0,3);
+    $("#hAn").innerHTML=an.length?an.map(a=>`<div class="card"><b>${esc(a.title)}</b><br><small>${esc(a.message)}</small></div>`).join(""):empty("No announcements");}catch{$("#hAn").innerHTML=empty("Could not load announcements")}
+  try{const tx=await loadTx(5);$("#hTx").innerHTML=tx.docs.length?tx.docs.map(txCard).join(""):empty("No transactions yet","Complete a task to see rewards here.")}catch{$("#hTx").innerHTML=empty("Could not load transactions")}
+  try{const tk=(await docs(query(collection(fb.db,"tasks"),limit(25)))).filter(taskOpen).slice(0,3);$("#hTk").innerHTML=tk.length?tk.map(taskCard).join(""):empty("No tasks available right now")}catch{$("#hTk").innerHTML=empty("Could not load tasks")}
+  try{const n=await docs(query(collection(fb.db,"notifications"),where("userId","==",S.uid),limit(30)));$("#nd").hidden=!n.some(x=>!x.read)}catch{}}
+const taskOpen=t=>t.active!==false&&(!t.deadline||(t.deadline.toDate?t.deadline.toDate():new Date(t.deadline))>new Date());
+function loadTx(n,after){const q=[collection(fb.db,"transactions"),where("userId","==",S.uid),orderBy("createdAt","desc")];if(after)q.push(startAfter(after));q.push(limit(n));return getDocs(query(...q)).then(s=>({docs:s.docs.map(d=>({id:d.id,...d.data()})),last:s.docs[s.docs.length-1]}))}
+const txCard=t=>`<div class="card row sp"><div class="grow"><b>${esc(lab(t.type))}</b><br><small>${esc(when(t.createdAt))} · ${esc(t.id.slice(0,8))}</small></div><div style="text-align:right"><b>${t.currency==="BDT"?bdt(t.amount):num(t.amount)+" TEX"}</b><br><small class="${cls(t.status)}">${esc(lab(t.status))}</small></div></div>`;
+
+/* ---------- EARN ---------- */
+async function rEarn(){const el=$("#p-earn");el.innerHTML=maintCard()+`<h2>Earn</h2><div class="chips" id="chips"></div><div id="eb">${skel(3)}</div>`;
+  try{if(!S.cats.length)S.cats=(await docs(collection(fb.db,"categories"))).filter(c=>c.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));}catch{$("#eb").innerHTML=empty("Could not load categories");return}
+  if(!S.cats.length){$("#eb").innerHTML=empty("No earning categories yet","Check back soon.");return}
+  if(!S.cat||!S.cats.find(c=>c.id===S.cat))S.cat=S.cats[0].id;
+  $("#chips").innerHTML=S.cats.map(c=>`<button class="chip ${c.id===S.cat?"on":""}" data-a="cat" data-id="${esc(c.id)}">${esc(c.icon||"")} ${esc(c.name)}</button>`).join("");
+  const c=S.cats.find(x=>x.id===S.cat),t=c.taskType;
+  if(t==="ads")return eAds(c);if(t==="daily"||t==="checkin")return eDaily(c);eTasks(c)}
+async function eAds(c){const s=S.set,ad=s.adsEnabled!==false,st=S.user.stats||{},lim=s.dailyAdLimit||0,done=S.user.adsToday||0;
+  const prov=window.TEX_AD_PROVIDER; // integration point: object with isReady():boolean and show():Promise<{eventId,token}>
+  $("#eb").innerHTML=`<div class="card"><h3 style="margin-top:0">Watch Ads &amp; Earn</h3><div class="grid"><div><small>Reward per ad</small><b>${num(s.adRewardTex)} TEX</b></div><div><small>Watched today</small><b>${num(done,0)}</b></div><div><small>Daily limit</small><b>${lim?num(lim,0):"—"}</b></div><div><small>Remaining</small><b>${lim?num(Math.max(0,lim-done),0):"—"}</b></div></div>
+  <p class="sm" style="margin:10px 0">Total ads watched: ${num(st.adsWatched,0)}. Rewards are credited only after the ad network confirms completion.</p>
+  ${!ad||!prov?`<div class="warnb">Ads are temporarily unavailable.</div>`:""}<button class="btn" style="width:100%" data-a="ad" ${!ad||!prov?"disabled":""}>Watch Ads</button></div><h3>Reward history</h3><div id="eh">${skel(1)}</div>`;
+  try{const tx=(await loadTx(30)).docs.filter(t=>t.type==="ad_reward").slice(0,8);$("#eh").innerHTML=tx.length?tx.map(txCard).join(""):empty("No ad rewards yet")}catch{$("#eh").innerHTML=empty("Could not load history")}}
+async function eDaily(c){let d=null;try{const s=await getDoc(doc(fb.db,"dailyClaims",S.uid));d=s.exists()?s.data():null}catch{}
+  const last=d?.lastClaimAt?.toDate?.(),today=last&&last.toDateString()===new Date().toDateString(),on=S.set.dailyCheckinEnabled!==false;
+  $("#eb").innerHTML=`<div class="card"><h3 style="margin-top:0">Daily check-in</h3><p>Reward: <b>${num(S.set.dailyCheckinRewardTex)} TEX</b></p><p class="sm">Last claim: ${esc(last?last.toLocaleDateString():"—")} · Streak: ${num(d?.streak,0)} day(s)</p>
+  <p class="${today?"t-approved":"t-pending"}" style="margin:8px 0">${today?"Claimed today":"Not claimed today"}</p><button class="btn gr" style="width:100%" data-a="daily" ${today||!on?"disabled":""}>${on?"Claim reward":"Check-in is disabled"}</button><small>The server decides the final eligibility.</small></div>`}
+async function eTasks(c){let ts=[],subs={};
+  try{ts=(await docs(query(collection(fb.db,"tasks"),where("categoryId","==",c.id)))).filter(taskOpen);
+    (await docs(query(collection(fb.db,"taskSubmissions"),where("userId","==",S.uid),limit(150)))).sort((a,b)=>(a.submittedAt?.seconds||0)-(b.submittedAt?.seconds||0)).forEach(s=>subs[s.taskId]=s);}catch{$("#eb").innerHTML=empty("Could not load tasks","Pull to retry.");return}
+  S.tasks=Object.fromEntries(ts.map(t=>[t.id,t]));S.subs=subs;
+  $("#eb").innerHTML=(c.description?`<p class="sm">${esc(c.description)}</p>`:"")+(ts.length?ts.map(taskCard).join(""):empty("No tasks in this category","New tasks appear here automatically."))}
+function taskCard(t){const s=S.subs?.[t.id],st=s?.status||"available",can=!s||st==="rejected"&&(!t.maxAttempts||1<t.maxAttempts);
+  return`<div class="card"><div class="row sp"><b>${esc(t.title)}</b><b class="t-approved">+${num(t.rewardTex)} TEX</b></div><p class="sm" style="margin:6px 0">${esc(t.description)}</p>
+  <div class="row sp"><small>${t.deadline?"Due "+esc(when(t.deadline)):""}${t.estimatedMinutes?" · ~"+num(t.estimatedMinutes,0)+" min":""}</small><span class="tag ${cls(st)}">${esc(lab(st))}</span></div>
+  ${s?.reviewNote?`<p class="sm" style="margin-top:6px">Review note: ${esc(s.reviewNote)}</p>`:""}
+  ${can?`<div class="btns"><button class="btn g s" data-a="tview" data-id="${esc(t.id)}">Start task</button><button class="btn s" data-a="tsub" data-id="${esc(t.id)}">Submit proof</button></div>`:""}</div>`}
+function proofModal({title,instr,proofType,id,kind}){const img=["screenshot","image"].includes(proofType),txt=!img;
+  modal(`<h3 style="margin-top:0">${esc(title)}</h3><p class="sm">${esc(instr||"")}</p>
+  ${txt?`<label>${esc(lab(proofType||"text"))} proof<textarea id="pt" rows="3" maxlength="1000" ${proofType==="pin"?'inputmode="numeric"':""}></textarea></label>`:""}
+  ${img?`<label>Upload ${esc(proofType)}</label><div id="um"></div>`:""}<div class="btns"><button class="btn g" id="pc">Cancel</button><button class="btn" id="ps">Submit</button></div>`);
+  const up=img?mountUploader($("#um")):null;$("#pc").onclick=closeModal;
+  $("#ps").onclick=()=>act($("#ps"),async()=>{const text=txt?$("#pt").value.trim():"";
+    if(txt&&!text)throw new Error("Enter your proof first.");if(img&&up.pending())throw new Error("Upload the selected image first.");if(img&&!up.url())throw new Error("Select and upload an image.");
+    if(!guard(kind!=="verification"))throw new Error("Not allowed right now.");
+    await api(kind==="verification"?"submitVerification":"submitTask",{id,proofType,proofText:text,proofImageUrl:up?.url()||""},"sub"+id);
+    closeModal();toast("Submitted for review.","ok");kind==="verification"?verifView($("#vb")):rEarn()})}
+
+/* ---------- REFERRAL ---------- */
+const refLink=()=>`https://t.me/${APP_CONFIG.TELEGRAM_BOT_USERNAME}/${APP_CONFIG.TELEGRAM_MINI_APP_NAME}?startapp=${encodeURIComponent(S.user.referralCode||"")}`;
+async function rRefer(){const el=$("#p-refer"),st=S.user.stats||{};
+  el.innerHTML=`<h2>Invite Friends &amp; Earn Together!</h2><p class="sm">Share your personal referral link with friends. Earn TEX rewards when your invited friends register and complete the required qualification steps.</p>
+  <div class="card"><small>Your referral link</small><input readonly id="rl" value="${esc(S.user.referralCode?refLink():"Referral code not ready yet")}"><div class="btns"><button class="btn" data-a="rcopy">Copy link</button><button class="btn gr" data-a="rshare">Share on Telegram</button></div></div>
+  <div class="grid"><div class="card"><small>Total</small><b>${num(st.totalReferrals,0)}</b></div><div class="card"><small>Qualified</small><b>${num(st.qualifiedReferrals,0)}</b></div><div class="card"><small>Pending</small><b>${num(st.pendingReferrals,0)}</b></div><div class="card"><small>TEX earned</small><b>${num(st.referralTex)}</b></div></div>
+  <h3>Your referrals</h3><div id="rlst">${skel(2)}</div>`;
+  try{const r=await docs(query(collection(fb.db,"referrals"),where("referrerUserId","==",S.uid),limit(50)));
+    $("#rlst").innerHTML=r.length?r.map(x=>`<div class="card row">${avatar({photoUrl:x.referredPhotoUrl,username:x.referredName})}<div class="grow"><b>${esc(x.referredName||"User")}</b><br><small>Joined ${esc(when(x.createdAt))}</small></div><div style="text-align:right"><span class="tag ${cls(x.status)}">${esc(lab(x.status))}</span><br><small>${x.rewardTransactionId?"Reward paid":"No reward yet"}</small></div></div>`).join(""):empty("No referrals yet","Share your link to get started.")}catch{$("#rlst").innerHTML=empty("Could not load referrals")}}
+
+/* ---------- LEADERBOARD ---------- */
+async function rBoard(){const el=$("#p-board"),{kind,per}=S.lb;
+  el.innerHTML=`<div class="row sp"><h2>Leaderboard</h2><button class="btn g s" data-a="lbr">Refresh</button></div>
+  <div class="chips"><button class="chip ${kind==="earn"?"on":""}" data-a="lbk" data-v="earn">TEX Earn</button><button class="chip ${kind==="referral"?"on":""}" data-a="lbk" data-v="referral">Referrals</button></div>
+  <div class="chips">${[["weekly","Weekly"],["monthly","Monthly"],["all","All time"]].map(([k,l])=>`<button class="chip ${per===k?"on":""}" data-a="lbp" data-v="${k}">${l}</button>`).join("")}</div><div id="lb">${skel(5)}</div>`;
+  try{const s=await getDoc(doc(fb.db,"leaderboards",kind+"_"+per)),e=(s.exists()?s.data().entries||[]:[]).slice(0,10);
+    $("#lb").innerHTML=e.length?e.map((x,i)=>`<div class="card row"><div class="rk top${i+1}">${i+1}</div>${avatar({photoUrl:x.photoUrl,username:x.name})}<div class="grow"><b>${esc(x.name||"User")}${x.uid===S.uid?" (you)":""}</b></div><b>${kind==="earn"?num(x.value)+" TEX":num(x.value,0)}</b></div>`).join(""):empty("No rankings yet","Rankings update from verified, approved rewards.")}catch{$("#lb").innerHTML=empty("Could not load rankings")}}
+
+/* ---------- SETTINGS & SUBVIEWS ---------- */
+const MENU=[["verif","Account Verification"],["wallet","Wallet"],["conv","TEX to BDT Conversion"],["wd","Withdraw"],["hist","Transaction History"],["help","Help & Support"],["terms","Terms & Conditions"],["priv","Privacy Policy"],["prof","Profile Information"]];
+function rSet(){$("#p-set").innerHTML=`<h2>Settings</h2>${maintCard()}`+MENU.map(([k,l])=>`<button class="menu" data-a="${k}"><span>${l}</span><span>›</span></button>`).join("")}
+async function verifView(b){let ts=[];try{ts=(await docs(collection(fb.db,"verificationTasks"))).filter(t=>t.active!==false);
+  var subs=await docs(query(collection(fb.db,"verificationSubmissions"),where("userId","==",S.uid),limit(50)))}catch{b.innerHTML=empty("Could not load verification");return}
+  b.innerHTML=`<div class="card"><small>Status</small><br><b class="${cls(S.user.verificationStatus)}">${esc(lab(S.user.verificationStatus||"not verified"))}</b><p class="sm">Only the trusted review process can verify your account. Earning and withdrawals unlock after approval.</p></div>`+
+  (ts.length?ts.map(t=>{const s=subs.find(x=>x.taskId===t.id),st=s?.status||"available";S.vt=S.vt||{};S.vt[t.id]=t;
+   return`<div class="card"><div class="row sp"><b>${esc(t.title)}</b><span class="tag ${cls(st)}">${esc(lab(st))}</span></div><p class="sm">${esc(t.instructions)}</p>${s?.reviewNote?`<p class="sm">Reason: ${esc(s.reviewNote)}</p>`:""}${["available","rejected"].includes(st)?`<button class="btn s" data-a="vsub" data-id="${esc(t.id)}">Submit proof</button>`:""}</div>`}).join(""):empty("No verification tasks","Nothing to complete right now."))}
+function convView(b){const rate=Number(S.set.texToBdtRate||0),fee=Number(S.set.conversionFeePercent||0),av=S.wallet?.availableTex||0;
+  b.innerHTML=`<div class="card"><small>Available</small><b style="font-size:22px;display:block">${num(av)} TEX</b><p>${rate?`1 TEX = ${num(rate)} BDT`:"Exchange rate unavailable"}</p>
+  <label>TEX amount<input id="ca" type="number" inputmode="decimal" min="0" step="any"></label><div class="sm" style="margin-top:10px" id="cs">Enter an amount.</div><button class="btn" style="width:100%;margin-top:12px" id="cc" disabled>Confirm conversion</button><small>Final amounts are calculated by the server using the live rate.</small></div>`;
+  const calc=()=>{const a=Number($("#ca").value),ok=a>0&&a<=av&&rate>0&&!S.set.maintenanceMode&&eligible(),g=a*rate,f=g*fee/100;
+    $("#cs").innerHTML=a>0?`Estimate ${bdt(g)} − fee ${bdt(f)} (${fee}%) = <b>${bdt(g-f)}</b>${a>av?'<br><span class="t-rejected">Exceeds available TEX.</span>':""}`:"Enter an amount.";$("#cc").disabled=!ok};
+  $("#ca").oninput=calc;$("#cc").onclick=async()=>{const a=Number($("#ca").value);if(!guard()||!await confirmBox("Convert TEX",`Convert <b>${num(a)} TEX</b> at the current server rate?`))return;
+    await act($("#cc"),async()=>{await api("convert",{texAmount:a},"conv");$("#ca").value="";calc()},"Conversion completed.")}}
+async function wdView(b){let ms=[];try{ms=(await docs(collection(fb.db,"paymentMethods"))).filter(m=>m.active!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0))}catch{b.innerHTML=empty("Could not load payment methods");return}
+  const bal=S.wallet?.bdtBalance||0,fee=(m,a)=>m.feeType==="percent"?a*(m.feeValue||0)/100:Number(m.feeValue||0);
+  b.innerHTML=`<div class="card"><small>BDT balance</small><b style="font-size:22px;display:block">${bdt(bal)}</b><p class="sm">Convert TEX to BDT before withdrawing. Only verified accounts can withdraw.</p></div>`+(ms.length?`<div class="card"><label>Payment method<select id="wm">${ms.map(m=>`<option value="${esc(m.id)}">${esc(m.icon||"")} ${esc(m.name)}</option>`).join("")}</select></label><div class="sm" id="wi"></div>
+  <label>Account number<input id="wn" inputmode="numeric" maxlength="30"></label><label>Amount (BDT)<input id="wa" type="number" inputmode="decimal" min="0" step="any"></label><div class="sm" id="wf" style="margin-top:8px"></div><button class="btn" style="width:100%;margin-top:12px" id="wb">Review request</button></div>`:empty("No payment methods available"))+`<h3>Your withdrawals</h3><div id="wl">${skel(1)}</div>`;
+  if(ms.length){const m=()=>ms.find(x=>x.id===$("#wm").value),lim=x=>[x.minimumWithdrawal??S.set.minimumWithdrawal??0,x.maximumWithdrawal??S.set.maximumWithdrawal??Infinity];
+    const upd=()=>{const x=m(),[mn,mx]=lim(x),a=Number($("#wa").value),f=fee(x,a);$("#wi").textContent=`Min ${bdt(mn)} · Max ${mx===Infinity?"—":bdt(mx)} · Fee ${x.feeType==="percent"?x.feeValue+"%":bdt(x.feeValue)}. ${x.instructions||""}`;$("#wf").innerHTML=a>0?`Fee ${bdt(f)} → payout <b>${bdt(a-f)}</b>`:""};
+    $("#wm").onchange=$("#wa").oninput=upd;upd();
+    $("#wb").onclick=async()=>{const x=m(),[mn,mx]=lim(x),a=Number($("#wa").value),n=$("#wn").value.trim();
+      if(!guard())return;if(!/^[0-9+\- ]{6,30}$/.test(n))return toast("Enter a valid account number.","er");if(!(a>=mn&&a<=mx))return toast(`Amount must be between ${bdt(mn)} and ${bdt(mx)}.`,"er");if(a>bal)return toast("Insufficient BDT balance.","er");
+      if(await confirmBox("Confirm withdrawal",`${esc(x.name)} · ${esc(n)}<br>Amount ${bdt(a)}<br>Fee ${bdt(fee(x,a))}<br>Payout <b>${bdt(a-fee(x,a))}</b>`,"Withdraw"))
+        await act($("#wb"),async()=>{await api("withdraw",{paymentMethodId:x.id,amountBdt:a,accountNumber:n},"wd");wdView(b)},"Withdrawal request submitted.")}}
+  try{const w=await docs(query(collection(fb.db,"withdrawals"),where("userId","==",S.uid),orderBy("createdAt","desc"),limit(10)));$("#wl").innerHTML=w.length?w.map(x=>`<div class="card row sp"><div><b>${bdt(x.amountBdt)}</b><br><small>${esc(when(x.createdAt))}</small></div><span class="tag ${cls(x.status)}">${esc(lab(x.status))}</span></div>`).join(""):empty("No withdrawals yet")}catch{$("#wl").innerHTML=empty("Could not load withdrawals")}}
+async function histView(b){let all=[],last=null,f={t:"",s:""};
+  b.innerHTML=`<div class="row"><select id="ht"><option value="">All types</option>${["ad_reward","micro_job_reward","bonus_reward","referral_reward","daily_checkin","conversion","withdrawal","adjustment"].map(x=>`<option value="${x}">${lab(x)}</option>`).join("")}</select><select id="hs"><option value="">All statuses</option>${["pending","approved","completed","rejected","reversed"].map(x=>`<option value="${x}">${lab(x)}</option>`).join("")}</select></div><div id="hl">${skel(3)}</div><button class="btn g" style="width:100%;margin-top:12px" id="hm" hidden>Load more</button>`;
+  const draw=()=>{const r=all.filter(x=>(!f.t||x.type===f.t)&&(!f.s||x.status===f.s));$("#hl").innerHTML=r.length?r.map(txCard).join(""):empty("No transactions","Try other filters or load more.")};
+  const more=async()=>{try{const r=await loadTx(15,last);all=all.concat(r.docs);last=r.last;$("#hm").hidden=r.docs.length<15;draw()}catch{$("#hl").innerHTML=empty("Could not load history")}};
+  $("#ht").onchange=e=>{f.t=e.target.value;draw()};$("#hs").onchange=e=>{f.s=e.target.value;draw()};$("#hm").onclick=more;more()}
+async function helpView(b){let fq=[];try{fq=await docs(query(collection(fb.db,"faqs"),limit(30)))}catch{}
+  const su=S.set.supportUsername;b.innerHTML=`<div class="card"><b>Contact support</b><p class="sm">Help with tasks, verification and withdrawals.</p><button class="btn" data-a="support" ${su?"":"disabled"}>${su?"Message @"+esc(su):"Support not configured"}</button></div><h3>FAQ</h3>`+(fq.length?fq.map(q=>`<div class="card"><b>${esc(q.question)}</b><p class="sm">${esc(q.answer)}</p></div>`).join(""):empty("No FAQs yet"))}
+async function legalView(b,k){let t="";try{const s=await getDoc(doc(fb.db,"appSettings","legal"));t=s.data()?.[k]||""}catch{}b.innerHTML=t?`<div class="card" style="white-space:pre-wrap">${esc(t)}</div>`:empty("Not published yet","Contact support for details.")}
+function profView(b){const u=S.user;b.innerHTML=`<div class="card row">${avatar(u)}<div><b>${esc(dname(u))}</b><br><small>Telegram ID ${esc(S.uid)}</small></div></div><div class="card"><small>Name</small><br>${esc([u.firstName,u.lastName].filter(Boolean).join(" ")||"—")}<br><small>Username</small><br>${esc(u.username?"@"+u.username:"Not set")}<br><small>Joined</small><br>${esc(when(u.createdAt))}<br><small>Status</small><br>${esc(lab(u.accountStatus))}</div>`}
+async function notifView(b){try{const n=(await docs(query(collection(fb.db,"notifications"),where("userId","==",S.uid),orderBy("createdAt","desc"),limit(30))));
+  b.innerHTML=n.length?n.map(x=>`<div class="card" data-a="nread" data-id="${esc(x.id)}" style="${x.read?"opacity:.6":""}"><b>${esc(x.title)}</b><p class="sm">${esc(x.message)}</p><small>${esc(when(x.createdAt))}</small></div>`).join(""):empty("No notifications")}catch{b.innerHTML=empty("Could not load notifications")}}
+const V={verif:["Account Verification",verifView],wallet:["Wallet",b=>{b.innerHTML=`<div class="card"><small>Available TEX</small><b style="font-size:22px;display:block">${num(S.wallet?.availableTex)}</b><small>Pending TEX</small><b style="display:block">${num(S.wallet?.pendingTex)}</b><small>BDT balance</small><b style="display:block">${bdt(S.wallet?.bdtBalance)}</b><small>Reserved BDT (withdrawals)</small><b style="display:block">${bdt(S.wallet?.reservedBdt)}</b></div>`}],conv:["Convert TEX",convView],wd:["Withdraw",wdView],hist:["Transactions",histView],help:["Help & Support",helpView],terms:["Terms & Conditions",b=>legalView(b,"terms")],priv:["Privacy Policy",b=>legalView(b,"privacy")],prof:["Profile",profView],notifs:["Notifications",notifView]};
+
+/* ---------- Event handling ---------- */
+const A={go:d=>{closeView();go(d.p)},back:closeView,cat:d=>{S.cat=d.id;rEarn()},
+ ad:b=>guard()&&act(b,async()=>{const p=window.TEX_AD_PROVIDER;if(!p?.isReady?.())throw new Error("Ads are temporarily unavailable.");
+   const ev=await p.show();if(!ev?.eventId)throw new Error("Ad was not completed.");await api("claimAd",{eventId:ev.eventId,token:ev.token||""},"ad");await refresh();rEarn()},"Ad reward credited."),
+ daily:b=>guard()&&act(b,async()=>{await api("claimDaily",{},"daily");await refresh();rEarn()},"Daily reward claimed."),
+ tview:d=>{const t=S.tasks[d.id];modal(`<h3 style="margin-top:0">${esc(t.title)}</h3><p>${esc(t.description)}</p><p class="sm" style="white-space:pre-wrap">${esc(t.instructions||"No extra instructions.")}</p><small>Proof required: ${esc(lab(t.proofType||"text"))}</small><div class="btns"><button class="btn g" data-a="mc">Close</button><button class="btn" data-a="tsub" data-id="${esc(t.id)}">Submit proof</button></div>`)},
+ mc:closeModal,
+ tsub:d=>{if(!guard())return;const t=S.tasks[d.id];proofModal({title:t.title,instr:t.instructions,proofType:t.proofType||"text",id:t.id,kind:"task"})},
+ vsub:d=>{const t=S.vt[d.id];proofModal({title:t.title,instr:t.instructions,proofType:t.proofType||"text",id:t.id,kind:"verification"})},
+ rcopy:()=>{if(!S.user.referralCode)return toast("Referral code not ready.","er");(navigator.clipboard?.writeText(refLink())||Promise.reject()).then(()=>toast("Link copied.","ok")).catch(()=>{$("#rl").select();toast("Press copy on the selected text.")})},
+ rshare:()=>S.user.referralCode&&tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(refLink())+"&text="+encodeURIComponent("Join Tele Earn X and earn TEX rewards!")),
+ lbk:d=>{S.lb.kind=d.v;rBoard()},lbp:d=>{S.lb.per=d.v;rBoard()},lbr:rBoard,
+ support:()=>tg.openTelegramLink("https://t.me/"+S.set.supportUsername),
+ nread:d=>act(null,()=>api("markNotificationRead",{id:d.id},"nr"+d.id))};
+MENU.concat([["notifs"]]).forEach(([k])=>A[k]=()=>{const[t,f]=V[k];openView(t,f)});
+document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(!t)return;e.preventDefault();const f=A[t.dataset.a];if(f)f(t.tagName==="BUTTON"&&["ad","daily"].includes(t.dataset.a)?t:t.dataset)});
+
+/* ---------- Boot ---------- */
+function prog(p,m){$("#sb").style.width=p+"%";$("#sp").textContent=m?m+" · "+p+"%":p+"%"}
+function fail(m){$("#se").textContent=m;$("#sr").hidden=false;$("#sp").textContent=""}
+async function refresh(){const[u,w]=await Promise.all([getDoc(doc(fb.db,"users",S.uid)),getDoc(doc(fb.db,"wallets",S.uid))]);S.user=u.data()||S.user;S.wallet=w.data()||S.wallet}
+async function boot(){$("#sr").hidden=true;$("#se").textContent="";prog(5,"Loading configuration");
+  const C=APP_CONFIG,miss=["apiKey","projectId","appId"].filter(k=>!C.FIREBASE_CONFIG[k]||String(C.FIREBASE_CONFIG[k]).includes("YOUR_"));
+  if(miss.length)return fail("Configuration missing: Firebase "+miss.join(", ")+". Edit APP_CONFIG in index.html.");
+  if(C.BACKEND_URL.includes("YOUR_"))return fail("Configuration missing: BACKEND_URL (trusted backend endpoint).");
+  prog(15,"Starting Telegram");if(!tg||!tg.initData)return fail("Telegram is required. Open Tele Earn X from the Telegram bot; the preview mode cannot earn rewards.");
+  tg.ready();tg.expand();tg.setHeaderColor?.("#0B1120");tg.setBackgroundColor?.("#0B1120");tg.BackButton.onClick(closeView);
+  try{prog(30,"Starting Firebase");if(!fb.app){fb.app=initializeApp(C.FIREBASE_CONFIG);fb.auth=getAuth(fb.app);fb.db=getFirestore(fb.app)}
+    prog(45,"Verifying Telegram identity");const a=await api("authTelegram",{startParam:tg.initDataUnsafe?.start_param||""});
+    await signInWithCustomToken(fb.auth,a.customToken);S.uid=String(a.uid);
+    prog(65,"Loading profile and wallet");await new Promise((res,rej)=>{let n=0;const ok=()=>++n===2&&res();S.unsubs.forEach(f=>f());
+      S.unsubs=[onSnapshot(doc(fb.db,"users",S.uid),s=>{S.user=s.data();ok();S.page&&!$("#app").hidden&&go(S.page)},rej),onSnapshot(doc(fb.db,"wallets",S.uid),s=>{S.wallet=s.data()||{};ok();if(!$("#app").hidden&&S.page==="home")rHome()},rej)]});
+    prog(85,"Loading settings");const g=await getDoc(doc(fb.db,"appSettings","general"));S.set=g.data()||{};
+    prog(100,"Ready");$("#app").hidden=$("#nav").hidden=false;go("home");$("#splash").classList.add("out");setTimeout(()=>$("#splash").hidden=true,450)}
+  catch(e){fail(e.message?.includes("permission")?"Access denied by database rules.":e.message||"Could not start. Check your connection.")}}
+$("#sr").onclick=boot;boot();
+</script></body></html>
